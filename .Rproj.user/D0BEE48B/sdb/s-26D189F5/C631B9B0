@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "library(stringr)\n\n#' Calculate stochastic %K indicator\n#'\n#' @param stock_data stock data \n#' @param start_date start of the time horizon\n#' @param end_date end of the time horizon\n#'\n#' @return value of %K\ncalculate_K <- function(stock_data, start_date, end_date) {\n  current_close = stock_data[end_date]$DAX.Close\n  \n  lowest_low = min(stock_data[str_c(cbind(start_date, end_date), collapse = \"/\")]$DAX.Low)\n  highest_high = max(stock_data[str_c(cbind(start_date, end_date), collapse = \"/\")]$DAX.High)\n  \n  K = (current_close - lowest_low) / (highest_high - lowest_low) * 100\n  \n  K = as.numeric(K)\n  \n  return (K)\n}\n\n#' Calculate stochastic %D indicator\n#'\n#' @param stock_data \n#' @param date \n#' @param start_date_for_K \n#' @param MA_days \n#'\n#' @return\n#' @export\n#'\n#' @examples\ncalculate_D <- function(stock_data, date, start_date_for_K, MA_days) {\n  # We needed basis to go backwards\n  row = which(DAX == DAX[date]&Close)\n  \n  # Calculate Moving Average in K\n  sum = 0\n  for(i in (MA_days - 1):0) {\n    date_for_MA = DAX[row - i, 0]\n    \n    sum = sum + calculate_K(start_date_for_K, date_for_MA)\n  }\n  \n  D = as.numeric(sum/MA_days)\n  \n  return (D)\n}",
+    "created" : 1494406484766.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4039607629",
+    "id" : "C631B9B0",
+    "lastKnownWriteTime" : 1494412135,
+    "last_content_update" : 1494412135097,
+    "path" : "~/Documents/Seminar/RandomForest/indicators.R",
+    "project_path" : "indicators.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
