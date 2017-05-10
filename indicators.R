@@ -225,15 +225,114 @@ calculate_moving_average <- function(stock_data, date, MA_days) {
   }
 }
 
+#' Calculate disparity indicator
+#'
+#' @param stock_data stock data
+#' @param date date at which to calculate
+#' @param MA_days days of moving average
+#'
+#' @return value of disparity
 calculate_disparity <- function(stock_data, date, MA_days) {
   # Start date
   rnames = row.names(as.data.frame(stock_data))
   today_date_index = which(rnames == date)
   
   current_close = stock_data[today_date_index, 4] # 4th column is for close price
-  moving_average = calculate_moving_average(stock_price, date, MA_days)
+  moving_average = calculate_moving_average(stock_data, date, MA_days)
   
   disparity = current_close / moving_average * 100
   
   return (disparity)
+}
+
+#' Calculate OSCP indicator
+#'
+#' @param stock_data stock data
+#' @param date date at which to calculate
+#' @param MA_days_1 days of the first moving average
+#' @param MA_days_2 days of the second moving average
+#'
+#' @return value of OSCP indicator
+calculate_oscp <- function(stock_data, date, MA_days_1, MA_days_2) {
+  moving_average_1 = calculate_moving_average(stock_data, date, MA_days_1)
+  moving_average_2 = calculate_moving_average(stock_data, date, MA_days_2)
+  
+  oscp = (moving_average_1 - moving_average_2) / moving_average_1
+  
+  return (oscp)
+}
+
+#' Calculate typical price
+#'
+#' @param stock_data stock data
+#' @param date date at which to calculate
+#'
+#' @return value of the typical price
+calculate_typical_price <- function(stock_data, date) {
+  # Today's date
+  rnames = row.names(as.data.frame(stock_data))
+  today_date_index = which(rnames == date)
+  
+  typical_price = (stock_data[today_date_index, 2] + stock_data[today_date_index, 3] + stock_data[today_date_index, 4]) / 3 
+  
+  return (typical_price)
+}
+
+#' Calculate simple moving average for typical price
+#'
+#' @param stock_data stock data
+#' @param date date at which to calculate
+#' @param number_of_days time horizon for moving average
+#'
+#' @return value of the simple moving average for typical price
+calculate_sma <- function(stock_data, date, number_of_days) {
+  # Today's date
+  rnames = row.names(as.data.frame(stock_data))
+  today_date_index = which(rnames == date)
+  
+  sma = calculate_typical_price(stock_data, date)
+  for(day in 1:number_of_days) {
+    date_for_tp = rnames[today_date_index - day]
+    sma = sma + (calculate_typical_price(stock_data, date_for_tp) - avg) / day
+  }
+  
+  return (sma)
+}
+
+#' Calculate mean deviation
+#'
+#' @param stock_data stock data
+#' @param date date at which to calculate
+#' @param number_of_days time horizion
+#'
+#' @return value of mean deviation
+calculate_mean_deviation <- function(stock_data, date, number_of_days) {
+  # Today's date
+  rnames = row.names(as.data.frame(stock_data))
+  today_date_index = which(rnames == date)
+  
+  mean_deviation = abs(calculate_typical_price(stock_data, date) - calculate_sma(stock_data, date, number_of_days))
+  for(day in 1:number_of_days) {
+    date_for_tp = rnames[today_date_index - day]
+    mean_deviation = mean_deviation + abs(calculate_typical_price(stock_data, date_for_tp) - avg) / day
+  }
+  
+  return (mean_deviation)
+}
+
+#' Calculate CCI indicator
+#'
+#' @param stock_data stock data
+#' @param date date at which to calculate
+#' @param number_of_days time horizon
+#'
+#' @return value of CCI indicator
+calculate_cci <- function(stock_data, date, number_of_days) {
+  typical_price = calculate_typical_price(stock_data, date)
+  sma = calculate_sma(stock_data, date, number_of_days)
+  mean_deviation = calculate_mean_deviation(stock_data, date, number_of_days)
+  
+  cci = (typical_price - sma) / (0.015 * mean_deviation)
+  
+  return (cci)
 }
