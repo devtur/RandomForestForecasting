@@ -1,5 +1,3 @@
-library(stringr)
-
 #' Calculate stochastic %K indicator
 #'
 #' @param stock_data stock data 
@@ -22,18 +20,15 @@ calculate_K <- function(stock_data, start_date, end_date) {
 
 #' Calculate stochastic %D indicator
 #'
-#' @param stock_data 
-#' @param date 
-#' @param start_date_for_K 
-#' @param MA_days 
+#' @param stock_data stock data
+#' @param date date for calculating
+#' @param start_date_for_K start day for %K indicator
+#' @param MA_days number of days for moving average
 #'
-#' @return
-#' @export
-#'
-#' @examples
+#' @return value of %D
 calculate_D <- function(stock_data, date, start_date_for_K, MA_days) {
   # We needed basis to go backwards
-  row = which(DAX == DAX[date]&Close)
+  row = which(DAX == DAX[date]$Close)
   
   # Calculate Moving Average in K
   sum = 0
