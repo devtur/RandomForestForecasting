@@ -162,10 +162,10 @@ calculate_RSI <- function(stock_data, date, number_of_days) {
   start_date_index = today_date_index - number_of_days
   
   avg_gains = 0
-  gain_hits = 0
+  gain_hits = 1
   
   avg_losses = 0
-  loss_hits = 0
+  loss_hits = 1
   for(day in (start_date_index + 1):today_date_index) {
     return = stock_data[day, 4] / stock_data[day - 1, 4] - 1
     
@@ -185,3 +185,4 @@ calculate_RSI <- function(stock_data, date, number_of_days) {
   
   return (rsi)
 }
+
