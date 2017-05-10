@@ -206,3 +206,34 @@ calculate_ad_oscillator <- function(stock_data, date) {
   
   return (ad_oscillator)
 }
+
+#' Calculate MA_days moving average
+#'
+#' @param stock_data stock data 
+#' @param date date at which to calculate
+#' @param MA_days days of moving average
+#'
+#' @return average close price for MA_days
+calculate_moving_average <- function(stock_data, date, MA_days) {
+  # Start date
+  rnames = row.names(as.data.frame(stock_data))
+  today_date_index = which(rnames == date)
+  
+  avg = stock_data[today_date_index]
+  for(day in 1:MA_days) {
+    avg = avg  + (stock_data[today_date_index - day, 4] - avg) / day
+  }
+}
+
+calculate_disparity <- function(stock_data, date, MA_days) {
+  # Start date
+  rnames = row.names(as.data.frame(stock_data))
+  today_date_index = which(rnames == date)
+  
+  current_close = stock_data[today_date_index, 4] # 4th column is for close price
+  moving_average = calculate_moving_average(stock_price, date, MA_days)
+  
+  disparity = current_close / moving_average * 100
+  
+  return (disparity)
+}
