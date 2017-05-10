@@ -8,7 +8,6 @@
 calculate_K <- function(stock_data, end_date, K_days) {
   # Start date
   rnames = row.names(as.data.frame(stock_data))
-  #print(K_days)
   start_date = rnames[which(rnames == end_date) - K_days]
   
   current_close = stock_data[end_date, 4] # 4th column is close price
@@ -41,8 +40,6 @@ calculate_D <- function(stock_data, date, K_days, MA_days) {
   # Calculate Moving Average in K
   sum = 0
   for(i in (MA_days - 1):0) {
-    #date_for_MA = rnames[row - i]
-  
     # End date for %K indicator    
     date_for_K = rnames[row - i]
     
@@ -127,4 +124,26 @@ calculate_ROC <- function(stock_data, date, number_of_days) {
   roc = (today_close_price - previous_close_price)/previous_close_price * 100
   
   return (roc)
+}
+
+#' Calculate William's %R indicator
+#'
+#' @param stock_data stock data
+#' @param date date at which to calculate
+#' @param number_of_days number of days to go back
+#'
+#' @return value of William's %R indicator
+calculate_williams_R <- function(stock_data, date, number_of_days) {
+  # Start date
+  rnames = row.names(as.data.frame(stock_data))
+  start_date = rnames[which(rnames == date) - number_of_days]
+  
+  current_close = stock_data[end_date, 4] # 4th column is close price
+  
+  lowest_low = min(stock_data[str_c(cbind(start_date, date), collapse = "/"), 3]) # 3rd column is low price
+  highest_high = max(stock_data[str_c(cbind(start_date, date), collapse = "/"), 2]) # 2nd column is high price
+  
+  r = (highest_high - current_close) / (highest_high - lowest_low) * 100
+  
+  return (r)
 }
