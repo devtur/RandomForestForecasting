@@ -147,3 +147,41 @@ calculate_williams_R <- function(stock_data, date, number_of_days) {
   
   return (r)
 }
+
+#' Calculate RSI indicator
+#'
+#' @param stock_data stock data
+#' @param date date at which to calculate
+#' @param number_of_days number of days to go back for returns
+#'
+#' @return value of RSI indicator
+calculate_RSI <- function(stock_data, date, number_of_days) {
+  # Start date
+  rnames = row.names(as.data.frame(stock_data))
+  today_date_index = which(rnames == date)
+  start_date_index = today_date_index - number_of_days
+  
+  avg_gains = 0
+  gain_hits = 0
+  
+  avg_losses = 0
+  loss_hits = 0
+  for(day in (start_date_index + 1):today_date_index) {
+    return = stock_data[day, 4] / stock_data[day - 1, 4] - 1
+    
+    # Determine if it is gain or loss
+    if(return > 0) {
+      avg_gains = avg_gain + (return - avg_gain)/gain_hits
+      gain_hits = gain_hits + 1
+    } else {
+      avg_losses = avg_losses + (return - avg_losses)/loss_hits
+      loss_hits = loss_hits + 1
+    }
+  }
+  
+  rs = avg_gains / avg_losses
+  
+  rsi = 100 / (1 + rs)
+  
+  return (rsi)
+}
