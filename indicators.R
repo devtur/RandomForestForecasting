@@ -159,14 +159,14 @@ calculate_RSI <- function(stock_data, date, number_of_days) {
   # Start date
   rnames = row.names(as.data.frame(stock_data))
   today_date_index = which(rnames == date)
-  start_date_index = today_date_index - number_of_days
+  previous_date_index = today_date_index - number_of_days
   
   avg_gains = 0
   gain_hits = 1
   
   avg_losses = 0
   loss_hits = 1
-  for(day in (start_date_index + 1):today_date_index) {
+  for(day in (previous_date_index + 1):today_date_index) {
     return = stock_data[day, 4] / stock_data[day - 1, 4] - 1
     
     # Determine if it is gain or loss
@@ -186,3 +186,23 @@ calculate_RSI <- function(stock_data, date, number_of_days) {
   return (rsi)
 }
 
+#' Calculate A/D Oscillator indicator
+#'
+#' @param stock_data stock data
+#' @param date date at which to calculate
+#'
+#' @return value of A/D Oscillator indicator
+calculate_ad_oscillator <- function(stock_data, date) {
+  # Start date
+  rnames = row.names(as.data.frame(stock_data))
+  today_date_index = which(rnames == date)
+  previous_date_index = today_date_index - number_of_days
+  
+  current_high = stock_data[today_date_index, 2] # 2nd column is for high price
+  current_low = stock_data[today_date_index, 3] # 3rd column is for low price
+  previous_date_close = stock_data[previous_date_index, 4] # 4th column is for close price
+  
+  ad_oscillator = (current_high - previous_date_close) / (current_high - current_low)
+  
+  return (ad_oscillator)
+}
