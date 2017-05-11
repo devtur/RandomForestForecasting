@@ -99,7 +99,7 @@ calculate_momentum <- function(stock_data, date, number_of_days) {
   previous_date_index = today_date_index - number_of_days
   previous_close_price = stock_data[previous_date_index, 4] # 4th column is close price
   
-  momentum = today_close_price - previous_close_price
+  momentum = as.numeric(today_close_price) - as.numeric(previous_close_price)
   
   return (momentum)
 }
@@ -121,7 +121,7 @@ calculate_ROC <- function(stock_data, date, number_of_days) {
   previous_date_index = today_date_index - number_of_days
   previous_close_price = stock_data[previous_date_index, 4] # 4th column is close price
   
-  roc = (today_close_price - previous_close_price)/previous_close_price * 100
+  roc = (as.numeric(today_close_price) - as.numeric(previous_close_price)) / as.numeric(previous_close_price) * 100
   
   return (roc)
 }
@@ -143,7 +143,7 @@ calculate_williams_R <- function(stock_data, date, number_of_days) {
   lowest_low = min(stock_data[str_c(cbind(start_date, date), collapse = "/"), 3]) # 3rd column is low price
   highest_high = max(stock_data[str_c(cbind(start_date, date), collapse = "/"), 2]) # 2nd column is high price
   
-  r = (highest_high - current_close) / (highest_high - lowest_low) * 100
+  r = (as.numeric(highest_high) - as.numeric(current_close)) / (as.numeric(highest_high) - as.numeric(lowest_low)) * 100
   
   return (r)
 }
@@ -166,12 +166,13 @@ calculate_RSI <- function(stock_data, date, number_of_days) {
   
   avg_losses = 0
   loss_hits = 1
+  
   for(day in (previous_date_index + 1):today_date_index) {
-    return = stock_data[day, 4] / stock_data[day - 1, 4] - 1
+    return = as.numeric(stock_data[day, 4]) / as.numeric(stock_data[day - 1, 4]) - 1
     
     # Determine if it is gain or loss
     if(return > 0) {
-      avg_gains = avg_gain + (return - avg_gain)/gain_hits
+      avg_gains = avg_gains + (return - avg_gains)/gain_hits
       gain_hits = gain_hits + 1
     } else {
       avg_losses = avg_losses + (return - avg_losses)/loss_hits
@@ -180,7 +181,7 @@ calculate_RSI <- function(stock_data, date, number_of_days) {
   }
   
   rs = avg_gains / avg_losses
-  
+
   rsi = 100 / (1 + rs)
   
   return (rsi)
@@ -202,7 +203,7 @@ calculate_ad_oscillator <- function(stock_data, date) {
   current_low = stock_data[today_date_index, 3] # 3rd column is for low price
   previous_date_close = stock_data[previous_date_index, 4] # 4th column is for close price
   
-  ad_oscillator = (current_high - previous_date_close) / (current_high - current_low)
+  ad_oscillator = (as.numeric(current_high) - as.numeric(previous_date_close)) / (as.numeric(current_high) - as.numeric(current_low))
   
   return (ad_oscillator)
 }
@@ -219,10 +220,12 @@ calculate_moving_average <- function(stock_data, date, MA_days) {
   rnames = row.names(as.data.frame(stock_data))
   today_date_index = which(rnames == date)
   
-  avg = stock_data[today_date_index]
+  avg = as.numeric(stock_data[today_date_index, 4])
   for(day in 1:MA_days) {
-    avg = avg  + (stock_data[today_date_index - day, 4] - avg) / day
+    avg = avg  + (as.numeric(stock_data[today_date_index - day, 4]) - avg) / day
   }
+  
+  return (avg)
 }
 
 #' Calculate disparity indicator
@@ -237,7 +240,7 @@ calculate_disparity <- function(stock_data, date, MA_days) {
   rnames = row.names(as.data.frame(stock_data))
   today_date_index = which(rnames == date)
   
-  current_close = stock_data[today_date_index, 4] # 4th column is for close price
+  current_close = as.numeric(stock_data[today_date_index, 4]) # 4th column is for close price
   moving_average = calculate_moving_average(stock_data, date, MA_days)
   
   disparity = current_close / moving_average * 100
@@ -273,7 +276,7 @@ calculate_typical_price <- function(stock_data, date) {
   rnames = row.names(as.data.frame(stock_data))
   today_date_index = which(rnames == date)
   
-  typical_price = (stock_data[today_date_index, 2] + stock_data[today_date_index, 3] + stock_data[today_date_index, 4]) / 3 
+  typical_price = (as.numeric(stock_data[today_date_index, 2]) + as.numeric(stock_data[today_date_index, 3]) + as.numeric(stock_data[today_date_index, 4])) / 3 
   
   return (typical_price)
 }

@@ -15,21 +15,9 @@ getSymbols(stock, src = "yahoo")
 #'
 #' @return data frame with indicators
 createData <- function(stock_data, start_date, end_date) {
-  # The structure of the data frame
-  df_stock_data <- data.frame(Date = as.Date(character()),
-                   K = double(), 
-                   D = double(),
-                   Slow_D = double(),
-                   Momentum = double(),
-                   ROC = double(),
-                   WilliamsR = double(),
-                   RSI = double(),
-                   AD_Oscillator = double(),
-                   Disparity_1 = double(),
-                   Disparity_2 = double(),
-                   CCI = double(),
-                   Stock_Movement = integer(), 
-                   stringsAsFactors = FALSE) 
+  
+  # Matrix for data
+  matrix_st = matrix(0, nrow = (end_date_index - start_date_index + 1), ncol = 13)
   
   # Search for start indices in stock data
   rnames = row.names(as.data.frame(stock_data))
@@ -39,10 +27,11 @@ createData <- function(stock_data, start_date, end_date) {
   # Parameters for indicators
   K_days = 14
   MA_days_for_D = 3
+  MA_days_for_slow_D = 3
   number_of_days_momentum = 4
   number_of_days_ROC = 3
   number_of_days_R = 3
-  number_of_days_RSI = 3
+  number_of_days_RSI = 4
   MA_days_disparity_1 = 5
   MA_days_disparity_2 = 10
   number_of_days_CCI = 4
@@ -52,33 +41,61 @@ createData <- function(stock_data, start_date, end_date) {
     today_date = rnames[day]
     
     # Calculate indicators' values
-    K = calculate_K(stock_data, today_date, K_days)                                 # 1. %K
-    D = calculate_D(stock_data, today_date, K_days, MA_days_for_D)                  # 2.
-    slow_D = calculate_slow_D(stock_data, today_date, K_days, MA_days_for_slow_D)   # 3.
-    momentum = calculate_momentum(stock_data, today_date, number_of_days_momentum)  # 4.
-    ROC = calculate_ROC(stock_data, today_date, number_of_days_ROC)                 # 5.
-    williamsR = calculate_williams_R(stock_data, today_date, number_of_days_R)      # 6.
-    RSI = calculate_RSI(stock_data, today_date, number_of_days_RSI)                 # 7.
-    ad_oscillator = calculate_ad_oscillator(stock_data, today_date)                 # 8. 
-    disparity_1 = calculate_disparity(stock_data, today_date, MA_days_disparity_1)  # 9.
-    disparity_2 = calculate_disparity(stock_data, today_date, MA_days_disparity_2)  # 10.
-    cci = calculate_cci(stock_data, today_date, number_of_days_CCI, const_var_CCI)  # 11.
+    K = calculate_K(stock_data, today_date, K_days)                                                # 1. %K
+    D = calculate_D(stock_data, today_date, K_days, MA_days_for_D)                                 # 2. %D
+    slow_D = calculate_slow_D(stock_data, today_date, K_days, MA_days_for_D, MA_days_for_slow_D)   # 3. slow %D
+    momentum = calculate_momentum(stock_data, today_date, number_of_days_momentum)                 # 4. Momentum
+    ROC = calculate_ROC(stock_data, today_date, number_of_days_ROC)                                # 5. ROC
+    williamsR = calculate_williams_R(stock_data, today_date, number_of_days_R)                     # 6. William's R
+    RSI = calculate_RSI(stock_data, today_date, number_of_days_RSI)                                # 7. RSI
+    ad_oscillator = calculate_ad_oscillator(stock_data, today_date)                                # 8. A/D Oscillator
+    disparity_1 = calculate_disparity(stock_data, today_date, MA_days_disparity_1)                 # 9. Disparity
+    disparity_2 = calculate_disparity(stock_data, today_date, MA_days_disparity_2)                 # 10. Disparity
+    cci = calculate_cci(stock_data, today_date, number_of_days_CCI, const_var_CCI)                 # 11. CCI
     
-    # Binary stock movement 1 is for up, 0 is for down
-    stock_movement = 0
-    return = stock_data[day + 1] / stock_data[day] - 1
+    # Binary stock movement TRUE is for up, FALSE is for down
+    stock_movement = FALSE
+    return = as.numeric(stock_data[day + 1, 4]) / as.numeric(stock_data[day, 4]) - 1
     
     # Check whenever it is up or down movement
     if(return > 0) {
-      stock_movement = 1
+      stock_movement = TRUE
     }
     
     # Create new row for data frame
-    new_entity = c(K, D, slow_D, momentum, ROC, williamsR, RSI, ad_oscillator, disparity_1, disparity_2, cci, stock_movement)
+    new_entity = c(as.character(today_date), 
+                   as.double(K), 
+                   as.double(D), 
+                   as.double(slow_D), 
+                   as.double(momentum), 
+                   as.double(ROC), 
+                   as.double(williamsR), 
+                   as.double(RSI), 
+                   as.double(ad_oscillator), 
+                   as.double(disparity_1), 
+                   as.double(disparity_2), 
+                   as.double(cci), 
+                   as.logical(stock_movement))
     
-    # Merger
-    df_stock_data <- rbind(df_stock_data, new_entity)
+    # Merge
+    matrix_st[day - start_date_index + 1, ] = new_entity
   }
+  
+  df_stock_data = as.data.frame(matrix_st)
+  names(df_stock_data) = c("Date", "K", "D", "Slow_D", "Momentum", "ROC", "WilliamsR", "RSI", "AD_Oscillator", "Disparity_1", "Disparity_2", "CCI", "Stock_Movement")
+  
+  df_stock_data$K = as.numeric(as.character(df_stock_data$K))
+  df_stock_data$D = as.numeric(as.character(df_stock_data$D))
+  df_stock_data$Slow_D = as.numeric(as.character(df_stock_data$Slow_D))
+  df_stock_data$Momentum = as.numeric(as.character(df_stock_data$Momentum))
+  df_stock_data$ROC = as.numeric(as.character(df_stock_data$ROC))
+  df_stock_data$WilliamsR = as.numeric(as.character(df_stock_data$WilliamsR))
+  df_stock_data$RSI = as.numeric(as.character(df_stock_data$RSI))
+  df_stock_data$AD_Oscillator = as.numeric(as.character(df_stock_data$AD_Oscillator))
+  df_stock_data$Disparity_1 = as.numeric(as.character(df_stock_data$Disparity_1))
+  df_stock_data$Disparity_2 = as.numeric(as.character(df_stock_data$Disparity_2))
+  df_stock_data$CCI = as.numeric(as.character(df_stock_data$CCI))
+  df_stock_data$Stock_Movement = as.logical(as.character(df_stock_data$Stock_Movement))
   
   return (df_stock_data)
 }
