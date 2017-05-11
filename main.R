@@ -7,6 +7,13 @@ source(indicators)
 stock = "DAX"
 getSymbols(stock, src = "yahoo")
 
+#' Create data frame of the needed data
+#'
+#' @param stock_data stock data
+#' @param start_date start date for analysis
+#' @param end_date end date for analysis
+#'
+#' @return data frame with indicators
 createData <- function(stock_data, start_date, end_date) {
   # The structure of the data frame
   df_stock_data <- data.frame(Date = as.Date(character()),
@@ -21,6 +28,7 @@ createData <- function(stock_data, start_date, end_date) {
                    Disparity_1 = double(),
                    Disparity_2 = double(),
                    CCI = double(),
+                   Stock_Movement = integer(), 
                    stringsAsFactors = FALSE) 
   
   # Search for start indices in stock data
@@ -55,10 +63,21 @@ createData <- function(stock_data, start_date, end_date) {
     disparity_2 = calculate_disparity(stock_data, today_date, MA_days_disparity_2)  # 10.
     cci = calculate_cci(stock_data, today_date, number_of_days_CCI)                 # 11.
     
-    # Create new row for data frame
-    new_entity = c(K, D, slow_D, momentum, ROC, williamsR, RSI, ad_oscillator, disparity_1, disparity_2, cci)
+    # Binary stock movement 1 is for up, 0 is for down
+    stock_movement = 0
+    return = stock_data[day + 1] / stock_data[day] - 1
     
-    # Merge
+    # Check whenever it is up or down movement
+    if(return > 0) {
+      stock_movement = 1
+    }
+    
+    # Create new row for data frame
+    new_entity = c(K, D, slow_D, momentum, ROC, williamsR, RSI, ad_oscillator, disparity_1, disparity_2, cci, stock_movement)
+    
+    # Merger
     df_stock_data <- rbind(df_stock_data, new_entity)
   }
+  
+  return (df_stock_data)
 }
