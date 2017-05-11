@@ -327,12 +327,12 @@ calculate_mean_deviation <- function(stock_data, date, number_of_days) {
 #' @param number_of_days time horizon
 #'
 #' @return value of CCI indicator
-calculate_cci <- function(stock_data, date, number_of_days) {
+calculate_cci <- function(stock_data, date, number_of_days, const_var) {
   typical_price = calculate_typical_price(stock_data, date)
   sma = calculate_sma(stock_data, date, number_of_days)
   mean_deviation = calculate_mean_deviation(stock_data, date, number_of_days)
   
-  cci = (typical_price - sma) / (0.015 * mean_deviation)
+  cci = (typical_price - sma) / (const_var * mean_deviation) # 0.015 ???
   
   return (cci)
 }

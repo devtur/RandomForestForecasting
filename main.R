@@ -46,6 +46,7 @@ createData <- function(stock_data, start_date, end_date) {
   MA_days_disparity_1 = 5
   MA_days_disparity_2 = 10
   number_of_days_CCI = 4
+  const_var_CCI = 0.015
   
   for(day in start_date_index:end_date_index) {
     today_date = rnames[day]
@@ -61,7 +62,7 @@ createData <- function(stock_data, start_date, end_date) {
     ad_oscillator = calculate_ad_oscillator(stock_data, today_date)                 # 8. 
     disparity_1 = calculate_disparity(stock_data, today_date, MA_days_disparity_1)  # 9.
     disparity_2 = calculate_disparity(stock_data, today_date, MA_days_disparity_2)  # 10.
-    cci = calculate_cci(stock_data, today_date, number_of_days_CCI)                 # 11.
+    cci = calculate_cci(stock_data, today_date, number_of_days_CCI, const_var_CCI)  # 11.
     
     # Binary stock movement 1 is for up, 0 is for down
     stock_movement = 0
