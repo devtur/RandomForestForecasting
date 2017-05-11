@@ -15,14 +15,13 @@ getSymbols(stock, src = "yahoo")
 #'
 #' @return data frame with indicators
 createData <- function(stock_data, start_date, end_date) {
-  
-  # Matrix for data
-  matrix_st = matrix(0, nrow = (end_date_index - start_date_index + 1), ncol = 13)
-  
   # Search for start indices in stock data
   rnames = row.names(as.data.frame(stock_data))
   start_date_index = which(rnames == start_date)
   end_date_index = which(rnames == end_date)
+  
+  # Matrix for data
+  matrix_st = matrix(0, nrow = (end_date_index - start_date_index + 1), ncol = 13)
   
   # Parameters for indicators
   K_days = 14
@@ -39,7 +38,7 @@ createData <- function(stock_data, start_date, end_date) {
   
   for(day in start_date_index:end_date_index) {
     today_date = rnames[day]
-    
+    print(day)
     # Calculate indicators' values
     K = calculate_K(stock_data, today_date, K_days)                                                # 1. %K
     D = calculate_D(stock_data, today_date, K_days, MA_days_for_D)                                 # 2. %D
@@ -55,35 +54,47 @@ createData <- function(stock_data, start_date, end_date) {
     
     # Binary stock movement TRUE is for up, FALSE is for down
     stock_movement = FALSE
-    return = as.numeric(stock_data[day + 1, 4]) / as.numeric(stock_data[day, 4]) - 1
-    
+    return = as.numeric(stock_data[day + 1, 4]) / as.numeric(stock_data[day, 4])
+
     # Check whenever it is up or down movement
-    if(return > 0) {
+    if(return > 1) {
       stock_movement = TRUE
     }
     
     # Create new row for data frame
     new_entity = c(as.character(today_date), 
-                   as.double(K), 
-                   as.double(D), 
-                   as.double(slow_D), 
-                   as.double(momentum), 
-                   as.double(ROC), 
-                   as.double(williamsR), 
-                   as.double(RSI), 
-                   as.double(ad_oscillator), 
-                   as.double(disparity_1), 
-                   as.double(disparity_2), 
-                   as.double(cci), 
-                   as.logical(stock_movement))
+                   as.character(K), 
+                   as.character(D), 
+                   as.character(slow_D), 
+                   as.character(momentum), 
+                   as.character(ROC), 
+                   as.character(williamsR), 
+                   as.character(RSI), 
+                   as.character(ad_oscillator), 
+                   as.character(disparity_1), 
+                   as.character(disparity_2), 
+                   as.character(cci), 
+                   as.character(stock_movement))
     
     # Merge
     matrix_st[day - start_date_index + 1, ] = new_entity
   }
-  
   df_stock_data = as.data.frame(matrix_st)
-  names(df_stock_data) = c("Date", "K", "D", "Slow_D", "Momentum", "ROC", "WilliamsR", "RSI", "AD_Oscillator", "Disparity_1", "Disparity_2", "CCI", "Stock_Movement")
+  names(df_stock_data) = c("Date", 
+                           "K", 
+                           "D", 
+                           "Slow_D", 
+                           "Momentum", 
+                           "ROC", 
+                           "WilliamsR", 
+                           "RSI", 
+                           "AD_Oscillator", 
+                           "Disparity_1", 
+                           "Disparity_2", 
+                           "CCI", 
+                           "Stock_Movement")
   
+  df_stock_data$Date = as.Date(as.character(df_stock_data$Date))
   df_stock_data$K = as.numeric(as.character(df_stock_data$K))
   df_stock_data$D = as.numeric(as.character(df_stock_data$D))
   df_stock_data$Slow_D = as.numeric(as.character(df_stock_data$Slow_D))
@@ -99,3 +110,15 @@ createData <- function(stock_data, start_date, end_date) {
   
   return (df_stock_data)
 }
+
+#' Run random forest classificaton
+#'
+#' @param train dataset to train
+#'
+#' @return classification summary
+runRandomForest <- function(train, ntree = 300, mtry = 3) {
+  out <- randomForest(as.factor(Stock_Movement) ~ K + D + Slow_D + Momentum + ROC + WilliamsR + RSI + Disparity_1 + Disparity_2 + CCI, data = train, ntree = ntree, mtry = mtry)
+
+  return (out)
+}
+

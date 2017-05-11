@@ -197,7 +197,7 @@ calculate_ad_oscillator <- function(stock_data, date) {
   # Start date
   rnames = row.names(as.data.frame(stock_data))
   today_date_index = which(rnames == date)
-  previous_date_index = today_date_index - number_of_days
+  previous_date_index = today_date_index - 1
   
   current_high = stock_data[today_date_index, 2] # 2nd column is for high price
   current_low = stock_data[today_date_index, 3] # 3rd column is for low price
