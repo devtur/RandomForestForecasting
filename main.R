@@ -1,7 +1,7 @@
 library(quantmod)
 library(stringr)
 
-source(indicators)
+source("indicators.R")
 
 # Import data from Yahoo! Finance
 stock = "DAX"
