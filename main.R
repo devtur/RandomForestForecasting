@@ -1,10 +1,12 @@
 library(quantmod)
 library(stringr)
+library(randomForest)
+library(nnet)
 
 source("indicators.R")
 
 # Import data from Yahoo! Finance
-stock = "DAX"
+stock = "^GDAXI"
 getSymbols(stock, src = "yahoo")
 
 #' Create data frame of the needed data
@@ -117,8 +119,55 @@ createData <- function(stock_data, start_date, end_date) {
 #'
 #' @return classification summary
 runRandomForest <- function(train, ntree = 300, mtry = 3) {
-  out <- randomForest(as.factor(Stock_Movement) ~ K + D + Slow_D + Momentum + ROC + WilliamsR + RSI + Disparity_1 + Disparity_2 + CCI, data = train, ntree = ntree, mtry = mtry)
+  out <- randomForest(as.factor(Stock_Movement) ~ K 
+                      + D 
+                      + Slow_D 
+                      + Momentum 
+                      + ROC 
+                      + WilliamsR 
+                      + RSI 
+                      + Disparity_1 
+                      + Disparity_2 
+                      + CCI,
+                      data = train, ntree = ntree, mtry = mtry, na.action = na.roughfix)
 
   return (out)
+}
+
+#' Run neural net on data
+#'
+#' @param train dataset
+#'
+#' @return neural net summary
+function(train) {
+  out <- nnet(as.factor(train$Stock_Movement) ~ train$K 
+                      + train$D 
+                      + train$Slow_D 
+                      + train$Momentum 
+                      + train$ROC 
+                      + train$WilliamsR 
+                      + train$RSI 
+                      + train$Disparity_1 
+                      + train$Disparity_2 
+                      + train$CCI,
+                      train, size = 50)
+  
+  return (out)
+}
+
+#' Data standartization to [0, 1]
+#'
+#' @param data dataset
+#'
+#' @return normalized dataset
+normalizeData <- function(data) {
+  n = ncol(data)
+  
+  # 2 because 1st is date column
+  for(i in 2:(n - 1)) {
+    data[, i] = (data[, i] - min(data[, i])) / (max(data[, i]) - min(data[, i]))
+  }
+  
+  return (data)
 }
 

@@ -296,7 +296,7 @@ calculate_sma <- function(stock_data, date, number_of_days) {
   sma = calculate_typical_price(stock_data, date)
   for(day in 1:number_of_days) {
     date_for_tp = rnames[today_date_index - day]
-    sma = sma + (calculate_typical_price(stock_data, date_for_tp) - avg) / day
+    sma = sma + (calculate_typical_price(stock_data, date_for_tp) - sma) / day
   }
   
   return (sma)
@@ -317,7 +317,7 @@ calculate_mean_deviation <- function(stock_data, date, number_of_days) {
   mean_deviation = abs(calculate_typical_price(stock_data, date) - calculate_sma(stock_data, date, number_of_days))
   for(day in 1:number_of_days) {
     date_for_tp = rnames[today_date_index - day]
-    mean_deviation = mean_deviation + abs(calculate_typical_price(stock_data, date_for_tp) - avg) / day
+    mean_deviation = mean_deviation + abs(calculate_typical_price(stock_data, date_for_tp) - mean_deviation) / day
   }
   
   return (mean_deviation)
