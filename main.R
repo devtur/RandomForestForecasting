@@ -2,12 +2,12 @@ library(quantmod)
 library(stringr)
 library(randomForest)
 library(nnet)
+library(scales)
+library(Quandl)
 
 source("indicators.R")
 
-# Import data from Yahoo! Finance
-stock = "^GDAXI"
-getSymbols(stock, src = "yahoo")
+args = commandArgs(trailingOnly = TRUE)
 
 #' Create data frame of the needed data
 #'
@@ -18,7 +18,12 @@ getSymbols(stock, src = "yahoo")
 #' @return data frame with indicators
 createData <- function(stock_data, start_date, end_date) {
   # Search for start indices in stock data
-  rnames = row.names(as.data.frame(stock_data))
+  #rnames = row.names(as.data.frame(stock_data))
+  
+  row.names(stock_data) <- stock_data[, 1]
+  rnames = row.names(stock_data)
+  stock_data = stock_data[, -1]
+  
   start_date_index = which(rnames == start_date)
   end_date_index = which(rnames == end_date)
   
@@ -37,10 +42,10 @@ createData <- function(stock_data, start_date, end_date) {
   MA_days_disparity_2 = 10
   number_of_days_CCI = 4
   const_var_CCI = 0.015
-  
+
   for(day in start_date_index:end_date_index) {
     today_date = rnames[day]
-    print(day)
+    #print(day)
     # Calculate indicators' values
     K = calculate_K(stock_data, today_date, K_days)                                                # 1. %K
     D = calculate_D(stock_data, today_date, K_days, MA_days_for_D)                                 # 2. %D
@@ -128,8 +133,9 @@ runRandomForest <- function(train, ntree = 300, mtry = 3) {
                       + RSI 
                       + Disparity_1 
                       + Disparity_2 
+                      + AD_Oscillator
                       + CCI,
-                      data = train, ntree = ntree, mtry = mtry, na.action = na.roughfix)
+                      data = train, ntree = ntree, mtry = mtry)
 
   return (out)
 }
@@ -139,18 +145,19 @@ runRandomForest <- function(train, ntree = 300, mtry = 3) {
 #' @param train dataset
 #'
 #' @return neural net summary
-function(train) {
-  out <- nnet(as.factor(train$Stock_Movement) ~ train$K 
-                      + train$D 
-                      + train$Slow_D 
-                      + train$Momentum 
-                      + train$ROC 
-                      + train$WilliamsR 
-                      + train$RSI 
-                      + train$Disparity_1 
-                      + train$Disparity_2 
-                      + train$CCI,
-                      train, size = 50)
+runNeuralNet <- function(train, threshold = 0.01, size = 50, iterations = 10000) {
+  out <- nnet(as.factor(Stock_Movement) ~ K
+                      + D
+                      + Slow_D
+                      + Momentum
+                      + ROC
+                      + WilliamsR
+                      + RSI
+                      + Disparity_1
+                      + Disparity_2
+                      + AD_Oscillator
+                      + CCI,
+                      data = train, size = size, threshold = threshold, maxit = iterations, trace = FALSE)
   
   return (out)
 }
@@ -164,10 +171,133 @@ normalizeData <- function(data) {
   n = ncol(data)
   
   # 2 because 1st is date column
-  for(i in 2:(n - 1)) {
+  for(i in 2:(n-1)) {
     data[, i] = (data[, i] - min(data[, i])) / (max(data[, i]) - min(data[, i]))
   }
   
   return (data)
 }
 
+#' Test model on data
+#'
+#' @param model Model
+#' @param test dataset to test
+#'
+#' @return percentage of wrong predictions
+testModel <- function(model, test) {
+  table = table(test[, 13], predict(model, test[, -13], type = "class"))
+  
+  error = (table[1, 2] + table[2, 1]) / sum(table)
+  
+  return (percent(error))
+}
+
+#' Run the whole project
+#'
+#' @return print report
+runEverything <- function() {
+  
+  # Print output to report.txt
+  sink("report.txt")
+  
+  write("*******************************************", file = "log.txt", sep = "\n", append = TRUE)
+  print("*******************************************")
+  print(date())
+  write(date(), file = "log.txt", sep = "\n", append = TRUE)
+  
+  print("Obtaining data for DAX index...")
+  write("Obtaining data for DAX index...", file = "log.txt", sep = "\n", append = TRUE)
+  # Import data from Yahoo! Finance
+  stock_data = Quandl("YAHOO/INDEX_GDAXI")
+  print("Data is ready.")
+  write("Data is ready.", file = "log.txt", sep = "\n", append = TRUE)
+  
+  # Exclude non-trading days
+  #stock_data = stock_data[which(stock_data$Volume != 0), ]
+  stock_data = stock_data[which(stock_data$High != stock_data$Low), ]
+  
+  # Revert in a way to put old days on top
+  stock_data = stock_data[nrow(stock_data):1, ]
+  
+  start_date_train = "1990-12-28"
+  end_date_train = "2011-04-13"
+  #start_date_train = "2000-08-18"
+  #end_date_train = "2014-04-28"
+  
+  start_date_test = "2011-04-14"
+  end_date_test = "2017-05-11"
+  # start_date_test = "2014-04-29"
+  # end_date_test = "2017-05-11"
+  
+  print(sprintf("Training period from %s to %s.", start_date_train, end_date_train))
+  write(sprintf("Training period from %s to %s.", start_date_train, end_date_train), file = "log.txt", sep = "\n", append = TRUE)
+  print(sprintf("Testing period from %s to %s.", start_date_test, end_date_test))
+  write(sprintf("Testing period from %s to %s.", start_date_test, end_date_test), file = "log.txt", sep = "\n", append = TRUE)
+  
+  print("-------------------")
+  write("-------------------", file = "log.txt", sep = "\n", append = TRUE)
+  print("Creating indicators...")
+  write("Creating indicators...", file = "log.txt", sep = "\n", append = TRUE)
+  train_data = createData(stock_data, start_date_train, end_date_train)
+  test_data = createData(stock_data, start_date_test, end_date_test)
+  print("Indicators created.")
+  write("Obtaining data for DAX index...", file = "log.txt", sep = "\n", append = TRUE)
+  
+  print("-------------------")
+  write("-------------------", file = "log.txt", sep = "\n", append = TRUE)
+  print("Normalizing data...")
+  write("Normalizing data...", file = "log.txt", sep = "\n", append = TRUE)
+  train_data_normalized = normalizeData(train_data)
+  test_data_normalized = normalizeData(test_data)
+  print("Data is normalized.")
+  write("Data is normalized.", file = "log.txt", sep = "\n", append = TRUE)
+  
+  print("-------------------")
+  write("-------------------", file = "log.txt", sep = "\n", append = TRUE)
+  
+  mtry = as.numeric(args[1])
+  number_of_trees = as.numeric(args[2])
+  
+  # mtry = 3
+  # number_of_trees = 40
+  
+  print(sprintf("Running Random Forest model with %s trees and %s nodes to split...", number_of_trees, mtry))
+  write(sprintf("Running Random Forest model with %s trees and %s nodes to split...", number_of_trees, mtry), file = "log.txt", sep = "\n", append = TRUE)
+  out_random_forest <- runRandomForest(train_data_normalized, ntree = number_of_trees, mtry = mtry)
+  print("Random Forest is built.")
+  write("Random Forest is built.", file = "log.txt", sep = "\n", append = TRUE)
+  
+  
+  print("-------------------")
+  write("-------------------", file = "log.txt", sep = "\n", append = TRUE)
+  
+  size = as.numeric(args[3])
+  iterations = as.numeric(args[4])
+  
+  # size = 25
+  # iterations = 500
+  
+  print(sprintf("Running Neural Network model with %s hidden nodes and %s iterations...", size, iterations))
+  write(sprintf("Running Neural Network model with %s hidden nodes and %s iterations...", size, iterations), file = "log.txt", sep = "\n", append = TRUE)
+  out_neural_net <- runNeuralNet(train_data_normalized, size = size, iterations = iterations)
+  print("Neural Net is built.")
+  write("Neural Net is built.", file = "log.txt", sep = "\n", append = TRUE)
+  
+  print("-------------------")
+  write("-------------------", file = "log.txt", sep = "\n", append = TRUE)
+  print("Evaluating test sample...")
+  write("Evaluating test sample...", file = "log.txt", sep = "\n", append = TRUE)
+  error_random_forest = testModel(out_random_forest, test_data_normalized)
+  error_neural_network = testModel(out_neural_net, test_data_normalized)
+  
+  print(sprintf("Random Forest got wrong %s of test sample.", error_random_forest))
+  write(sprintf("Random Forest got wrong %s of test sample.", error_random_forest), file = "log.txt", sep = "\n", append = TRUE)
+  print(sprintf("Neural Network got wrong %s of test sample.", error_neural_network))
+  write(sprintf("Neural Network got wrong %s of test sample.", error_neural_network), file = "log.txt", sep = "\n", append = TRUE)
+  write("*******************************************", file = "log.txt", sep = "\n", append = TRUE)
+  print("*******************************************")
+  
+  return (0)
+}
+
+runEverything()

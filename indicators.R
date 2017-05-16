@@ -8,12 +8,17 @@
 calculate_K <- function(stock_data, end_date, K_days) {
   # Start date
   rnames = row.names(as.data.frame(stock_data))
-  start_date = rnames[which(rnames == end_date) - K_days]
+  end_date_index = which(rnames == end_date)
+  start_date = rnames[end_date_index - K_days]
+  start_date_index = end_date_index - K_days
   
-  current_close = stock_data[end_date, 4] # 4th column is close price
+  # print(start_date_index)
+  # print(end_date_index)
   
-  lowest_low = min(stock_data[str_c(cbind(start_date, end_date), collapse = "/"), 3]) # 3rd column is low price
-  highest_high = max(stock_data[str_c(cbind(start_date, end_date), collapse = "/"), 2]) # 2nd column is high price
+  current_close = stock_data[end_date_index, 4] # 4th column is close price
+
+  lowest_low = min(stock_data[start_date_index:end_date_index, 3]) # 3rd column is low price
+  highest_high = max(stock_data[start_date_index:end_date_index, 2]) # 2nd column is high price
   
   K = (current_close - lowest_low) / (highest_high - lowest_low) * 100
   
@@ -133,15 +138,17 @@ calculate_ROC <- function(stock_data, date, number_of_days) {
 #' @param number_of_days number of days to go back
 #'
 #' @return value of William's %R indicator
-calculate_williams_R <- function(stock_data, date, number_of_days) {
+calculate_williams_R <- function(stock_data, end_date, number_of_days) {
   # Start date
   rnames = row.names(as.data.frame(stock_data))
-  start_date = rnames[which(rnames == date) - number_of_days]
+  end_date_index = which(rnames == end_date)
+  start_date = rnames[end_date_index - number_of_days]
+  start_date_index = end_date_index - number_of_days
   
-  current_close = stock_data[end_date, 4] # 4th column is close price
+  current_close = stock_data[end_date_index, 4] # 4th column is close price
   
-  lowest_low = min(stock_data[str_c(cbind(start_date, date), collapse = "/"), 3]) # 3rd column is low price
-  highest_high = max(stock_data[str_c(cbind(start_date, date), collapse = "/"), 2]) # 2nd column is high price
+  lowest_low = min(stock_data[start_date_index:end_date_index, 3]) # 3rd column is low price
+  highest_high = max(stock_data[start_date_index:end_date_index, 2]) # 2nd column is high price
   
   r = (as.numeric(highest_high) - as.numeric(current_close)) / (as.numeric(highest_high) - as.numeric(lowest_low)) * 100
   
